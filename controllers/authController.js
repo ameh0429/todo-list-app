@@ -1,8 +1,8 @@
-import { validationResult } from 'express-validator';
-import bcrypt from 'bcryptjs';
-import User from '../models/User.js';
-import { generateToken } from '../utils/generateToken.js';
-import { sendSuccess, sendError } from '../utils/responseHandler.js';
+import { validationResult } from "express-validator";
+import bcrypt from "bcryptjs";
+import User from "../models/User.js";
+import { generateToken } from "../utils/generateToken.js";
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
 // @desc    Register user
 // @route   POST /api/register
@@ -14,64 +14,147 @@ export const register = async (req, res) => {
     if (!errors.isEmpty()) {
       return sendError(res, 400, errors.array()[0].msg);
     }
-    
-    const { title, description, dueDate, priority, isCompleted } = req.body;
-    
-    // Find task
-    const task = await Task.findOne({
-      _id: req.params.id,
-      userId: req.user._id
+
+    const { name, email, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return sendError(res, 400, "User with this email already exists");
+    }
+
+    // Create user
+    const user = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase(),
+      password,
     });
-    
-    if (!task) {
-      return sendError(res, 404, 'Task not found');
-    }
-    
-    // Validate due date is in future (only if being updated and not completed)
-    if (dueDate && new Date(dueDate) <= new Date() && !isCompleted) {
-      return sendError(res, 400, 'Due date must be in the future');
-    }
-    
-    // Update fields
-    if (title !== undefined) task.title = title.trim();
-    if (description !== undefined) task.description = description?.trim();
-    if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : undefined;
-    if (priority !== undefined) task.priority = priority;
-    if (isCompleted !== undefined) task.isCompleted = isCompleted;
-    
-    // Save task
-    await task.save();
-    
-    sendSuccess(res, 200, 'Task updated successfully', { task });
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    sendSuccess(res, 201, "User registered successfully", {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      },
+      token,
+    });
   } catch (error) {
-    console.error('Update task error:', error);
-    sendError(res, 500, 'Server error during task update');
+    console.error("Register error:", error);
+    sendError(res, 500, "Server error during registration");
   }
 };
 
-// @desc    Delete task
-// @route   DELETE /api/tasks/:id
-// @access  Private
-export const deleteTask = async (req, res) => {
+// @desc    Login user
+// @route   POST /api/login
+// @access  Public
+export const login = async (req, res) => {
   try {
     // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 400, errors.array()[0].msg);
     }
-    
-    const task = await Task.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user._id
-    });
-    
-    if (!task) {
-      return sendError(res, 404, 'Task not found');
+
+    const { email, password } = req.body;
+
+    // Find user and include password
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+password"
+    );
+
+    if (!user) {
+      return sendError(res, 401, "Invalid email or password");
     }
-    
-    sendSuccess(res, 200, 'Task deleted successfully');
+
+    // Check password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return sendError(res, 401, "Invalid email or password");
+    }
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    sendSuccess(res, 200, "Login successful", {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      },
+      token,
+    });
   } catch (error) {
-    console.error('Delete task error:', error);
-    sendError(res, 500, 'Server error during task deletion');
+    console.error("Login error:", error);
+    sendError(res, 500, "Server error during login");
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/profile
+// @access  Private
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const userId = req.user._id;
+
+    // Find user
+    const user = await User.findById(userId).select("+password");
+    if (!user) {
+      return sendError(res, 404, "User not found");
+    }
+
+    // Update fields
+    if (name && name.trim()) {
+      user.name = name.trim();
+    }
+
+    if (email && email.trim()) {
+      const existingUser = await User.findOne({
+        email: email.toLowerCase(),
+        _id: { $ne: userId },
+      });
+
+      if (existingUser) {
+        return sendError(res, 400, "Email already in use by another user");
+      }
+
+      user.email = email.toLowerCase();
+    }
+
+    if (password) {
+      if (password.length < 6) {
+        return sendError(
+          res,
+          400,
+          "Password must be at least 6 characters long"
+        );
+      }
+      user.password = password;
+    }
+
+    // Save user (password will be hashed by pre-save middleware)
+    await user.save();
+
+    sendSuccess(res, 200, "Profile updated successfully", {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        updatedAt: user.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+
+    if (error.code === 11000) {
+      return sendError(res, 400, "Email already in use");
+    }
+
+    sendError(res, 500, "Server error during profile update");
   }
 };
