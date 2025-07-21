@@ -1,7 +1,7 @@
-import { validationResult } from 'express-validator';
-import Task from '../models/Task.js';
-import { sendSuccess, sendError } from '../utils/responseHandler.js';
-import { sendTaskCreationEmail } from '../services/emailService.js';
+import { validationResult } from "express-validator";
+import Task from "../models/Task.js";
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
+import { sendTaskCreationEmail } from "../services/emailService.js";
 
 // @desc    Create a new task
 // @route   POST /api/tasks
@@ -13,33 +13,63 @@ export const createTask = async (req, res) => {
     if (!errors.isEmpty()) {
       return sendError(res, 400, errors.array()[0].msg);
     }
-    
+
     const { title, description, dueDate, priority } = req.body;
-    
+
     // Validate due date is in future
     if (dueDate && new Date(dueDate) <= new Date()) {
-      return sendError(res, 400, 'Due date must be in the future');
+      return sendError(res, 400, "Due date must be in the future");
     }
-    
+
     // Create task
     const task = await Task.create({
       title: title.trim(),
       description: description?.trim(),
       dueDate: dueDate ? new Date(dueDate) : undefined,
-      priority: priority || 'Medium',
-      userId: req.user._id
+      priority: priority || "Medium",
+      userId: req.user._id,
     });
-    
+
+    // Format Nigerian time (Africa/Lagos) in 12-hour format
+    function formatToLagosTime(date) {
+      return date?.toLocaleString("en-NG", {
+        timeZone: "Africa/Lagos",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
+
+    // Convert task to plain object and append formatted date
+    const formattedTask = {
+      ...task.toObject(),
+      dueDateFormatted: formatToLagosTime(task.dueDate),
+      createdAtFormatted: formatToLagosTime(task.createdAt),
+      updatedAtFormatted: formatToLagosTime(task.updatedAt),
+    };
+
+    // Send response
+    res.status(201).json({
+      success: true,
+      message: "Task created successfully",
+      data: {
+        task: formattedTask,
+      },
+    });
+
     // Populate user info for response
-    await task.populate('userId', 'name email');
-    
+    await task.populate("userId", "name email");
+
     // Send confirmation email
     sendTaskCreationEmail(req.user, task);
-    
-    sendSuccess(res, 201, 'Task created successfully', { task });
+
+    sendSuccess(res, 201, "Task created successfully", { task });
   } catch (error) {
-    console.error('Create task error:', error);
-    sendError(res, 500, 'Server error during task creation');
+    console.error("Create task error:", error);
+    sendError(res, 500, "Server error during task creation");
   }
 };
 
@@ -53,7 +83,7 @@ export const getTasks = async (req, res) => {
     if (!errors.isEmpty()) {
       return sendError(res, 400, errors.array()[0].msg);
     }
-    
+
     const {
       isCompleted,
       priority,
@@ -61,59 +91,56 @@ export const getTasks = async (req, res) => {
       search,
       page = 1,
       limit = 10,
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = req.query;
-    
+
     // Build filter object
     const filter = { userId: req.user._id };
-    
+
     if (isCompleted !== undefined) {
-      filter.isCompleted = isCompleted === 'true';
+      filter.isCompleted = isCompleted === "true";
     }
-    
+
     if (priority) {
       filter.priority = priority;
     }
-    
+
     if (dueDate) {
       const date = new Date(dueDate);
       const nextDay = new Date(date);
       nextDay.setDate(nextDay.getDate() + 1);
-      
+
       filter.dueDate = {
         $gte: date,
-        $lt: nextDay
+        $lt: nextDay,
       };
     }
-    
+
     if (search) {
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
       ];
     }
-    
+
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const sortOption = {};
-    sortOption[sortBy] = sortOrder === 'asc' ? 1 : -1;
-    
+    sortOption[sortBy] = sortOrder === "asc" ? 1 : -1;
+
     // Get tasks with pagination
     const [tasks, totalTasks] = await Promise.all([
-      Task.find(filter)
-        .sort(sortOption)
-        .skip(skip)
-        .limit(parseInt(limit)),
-      Task.countDocuments(filter)
+      Task.find(filter).sort(sortOption).skip(skip).limit(parseInt(limit)),
+      Task.countDocuments(filter),
     ]);
-    
+
     // Calculate pagination info
     const totalPages = Math.ceil(totalTasks / parseInt(limit));
     const hasNextPage = parseInt(page) < totalPages;
     const hasPrevPage = parseInt(page) > 1;
-    
-    sendSuccess(res, 200, 'Tasks retrieved successfully', {
+
+    sendSuccess(res, 200, "Tasks retrieved successfully", {
       tasks,
       pagination: {
         currentPage: parseInt(page),
@@ -121,12 +148,12 @@ export const getTasks = async (req, res) => {
         totalTasks,
         hasNextPage,
         hasPrevPage,
-        limit: parseInt(limit)
-      }
+        limit: parseInt(limit),
+      },
     });
   } catch (error) {
-    console.error('Get tasks error:', error);
-    sendError(res, 500, 'Server error during task retrieval');
+    console.error("Get tasks error:", error);
+    sendError(res, 500, "Server error during task retrieval");
   }
 };
 
@@ -140,20 +167,20 @@ export const getTask = async (req, res) => {
     if (!errors.isEmpty()) {
       return sendError(res, 400, errors.array()[0].msg);
     }
-    
+
     const task = await Task.findOne({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user._id,
     });
-    
+
     if (!task) {
-      return sendError(res, 404, 'Task not found');
+      return sendError(res, 404, "Task not found");
     }
-    
-    sendSuccess(res, 200, 'Task retrieved successfully', { task });
+
+    sendSuccess(res, 200, "Task retrieved successfully", { task });
   } catch (error) {
-    console.error('Get task error:', error);
-    sendError(res, 500, 'Server error during task retrieval');
+    console.error("Get task error:", error);
+    sendError(res, 500, "Server error during task retrieval");
   }
 };
 
@@ -172,7 +199,7 @@ export const updateTask = async (req, res) => {
 
     // Validate due date is in future
     if (dueDate && new Date(dueDate) <= new Date()) {
-      return sendError(res, 400, 'Due date must be in the future');
+      return sendError(res, 400, "Due date must be in the future");
     }
 
     // Find and update the task
@@ -183,19 +210,19 @@ export const updateTask = async (req, res) => {
         ...(description && { description: description.trim() }),
         ...(dueDate && { dueDate: new Date(dueDate) }),
         ...(priority && { priority }),
-        ...(typeof isCompleted !== 'undefined' && { isCompleted })
+        ...(typeof isCompleted !== "undefined" && { isCompleted }),
       },
       { new: true }
     );
 
     if (!task) {
-      return sendError(res, 404, 'Task not found');
+      return sendError(res, 404, "Task not found");
     }
 
-    sendSuccess(res, 200, 'Task updated successfully', { task });
+    sendSuccess(res, 200, "Task updated successfully", { task });
   } catch (error) {
-    console.error('Update task error:', error);
-    sendError(res, 500, 'Server error during task update');
+    console.error("Update task error:", error);
+    sendError(res, 500, "Server error during task update");
   }
 };
 
@@ -209,19 +236,19 @@ export const deleteTask = async (req, res) => {
     if (!errors.isEmpty()) {
       return sendError(res, 400, errors.array()[0].msg);
     }
-    
+
     const task = await Task.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user._id,
     });
-    
+
     if (!task) {
-      return sendError(res, 404, 'Task not found');
+      return sendError(res, 404, "Task not found");
     }
-    
-    sendSuccess(res, 200, 'Task deleted successfully');
+
+    sendSuccess(res, 200, "Task deleted successfully");
   } catch (error) {
-    console.error('Delete task error:', error);
-    sendError(res, 500, 'Server error during task deletion');
+    console.error("Delete task error:", error);
+    sendError(res, 500, "Server error during task deletion");
   }
 };

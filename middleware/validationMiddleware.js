@@ -40,8 +40,16 @@ export const validateTask = [
     .withMessage('Priority must be Low, Medium, or High'),
   body('dueDate')
     .optional()
-    .isISO8601()
-    .withMessage('Due date must be a valid date')
+    .custom(value => {
+      const parsedDate = new Date(value);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Due date must be a valid 12-hour format date');
+      }
+      if (parsedDate <= new Date()) {
+        throw new Error('Due date must be in the future');
+      }
+      return true;
+    })
 ];
 
 export const validateTaskId = [
