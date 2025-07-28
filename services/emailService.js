@@ -50,31 +50,28 @@ export const sendTaskCreationEmail = async (user, task) => {
 };
 
 // Send daily reminders for tasks due tomorrow
-export const sendDailyReminders = async () => {
+export const sendUpcomingTaskReminders = async () => {
   try {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    
-    const dayAfterTomorrow = new Date(tomorrow);
-    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
-    
-    // Find tasks due tomorrow that are not completed
-    const tasksDueTomorrow = await Task.find({
+    const now = new Date();
+    const thirtyMinsFromNow = new Date(now.getTime() + 30 * 60 * 1000);
+
+    // Find tasks due in the next 30 minutes that are not completed and not already reminded
+    const tasksDueSoon = await Task.find({
       dueDate: {
-        $gte: tomorrow,
-        $lt: dayAfterTomorrow
+        $gte: now,
+        $lte: thirtyMinsFromNow
       },
-      isCompleted: false
+      isCompleted: false,
+      reminderSent: { $ne: true }
     }).populate('userId', 'name email');
-    
-    if (tasksDueTomorrow.length === 0) {
-      console.log('No tasks due tomorrow - no reminder emails to send');
+
+    if (tasksDueSoon.length === 0) {
+      console.log('No tasks due in the next 30 minutes - no reminder emails to send');
       return;
     }
-    
+
     // Group tasks by user
-    const tasksByUser = tasksDueTomorrow.reduce((acc, task) => {
+    const tasksByUser = tasksDueSoon.reduce((acc, task) => {
       const userId = task.userId._id.toString();
       if (!acc[userId]) {
         acc[userId] = {
@@ -85,13 +82,13 @@ export const sendDailyReminders = async () => {
       acc[userId].tasks.push(task);
       return acc;
     }, {});
-    
+
     const transporter = createTransporter();
-    
+
     // Send reminder email to each user
     for (const userId in tasksByUser) {
       const { user, tasks } = tasksByUser[userId];
-      
+
       const tasksList = tasks.map(task => `
         <li style="margin-bottom: 15px; padding: 10px; background-color: #f9f9f9; border-left: 4px solid ${task.priority === 'High' ? '#f44336' : task.priority === 'Medium' ? '#ff9800' : '#4CAF50'};">
           <strong>${task.title}</strong>
@@ -99,16 +96,16 @@ export const sendDailyReminders = async () => {
           <br><small style="color: #999;">Priority: ${task.priority}</small>
         </li>
       `).join('');
-      
+
       const mailOptions = {
         from: process.env.EMAIL_FROM,
         to: user.email,
-        subject: 'Task Reminder - Tasks Due Tomorrow',
+        subject: 'Task Reminder - Tasks Due Soon',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color:#ff9800;">Daily Task Reminder</h2>
+            <h2 style="color:#ff9800;">Upcoming Task Reminder</h2>
             <p>Hi ${user.name},</p>
-            <p>You have <strong>${tasks.length}</strong> task${tasks.length > 1 ? 's' : ''} due tomorrow:</p>
+            <p>You have <strong>${tasks.length}</strong> task${tasks.length > 1 ? 's' : ''} due in the next 30 minutes:</p>
             
             <ul style="list-style: none; padding: 0;">
               ${tasksList}
@@ -119,17 +116,22 @@ export const sendDailyReminders = async () => {
           </div>
         `
       };
-      
+
       try {
         await transporter.sendMail(mailOptions);
         console.log(`Reminder email sent to ${user.email} for ${tasks.length} task(s)`);
+        // Mark tasks as reminded
+        await Task.updateMany(
+          { _id: { $in: tasks.map(t => t._id) } },
+          { $set: { reminderSent: true } }
+        );
       } catch (error) {
         console.error(`Failed to send reminder email to ${user.email}:`, error);
       }
     }
-    
-    console.log(`Sent reminder emails to ${Object.keys(tasksByUser).length} user(s)`);
+
+    console.log(`Sent 30-minute reminder emails to ${Object.keys(tasksByUser).length} user(s)`);
   } catch (error) {
-    console.error('Error in sendDailyReminders:', error);
+    console.error('Error in sendUpcomingTaskReminders:', error);
   }
 };

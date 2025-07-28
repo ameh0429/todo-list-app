@@ -11,7 +11,7 @@ import authRoutes from './routes/authRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 
 // Import services
-import { sendDailyReminders } from './services/emailService.js';
+import { sendUpcomingTaskReminders } from './services/emailService.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorMiddleware.js';
@@ -80,9 +80,9 @@ mongoose.connect(process.env.MONGODB_URI)
   });
 
 // Schedule daily reminder emails at 9:00 AM
-cron.schedule('0 9 * * *', () => {
-  console.log('Running daily email reminders...');
-  sendDailyReminders();
+cron.schedule('*/5 * * * *', () => {
+  console.log('Running upcoming task reminders...');
+  sendUpcomingTaskReminders();
 }, {
   timezone: "UTC"
 });
