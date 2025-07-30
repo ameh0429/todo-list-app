@@ -52,9 +52,9 @@ const TaskModal = ({ task, isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
         <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
             {task ? 'Edit Task' : 'New Task'}
           </h2>
 
@@ -64,7 +64,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave }) => {
               placeholder="Task title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               required
             />
 
@@ -72,13 +72,13 @@ const TaskModal = ({ task, isOpen, onClose, onSave }) => {
               placeholder="Description (optional)"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-20 resize-none"
+              className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-20 resize-none"
             />
 
             <select
               value={formData.priority}
               onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             >
               <option value="Low">Low Priority</option>
               <option value="Medium">Medium Priority</option>
@@ -90,13 +90,13 @@ const TaskModal = ({ task, isOpen, onClose, onSave }) => {
                 type="date"
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
               <input
                 type="time"
                 value={formData.dueTime}
                 onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 disabled={!formData.dueDate}
               />
             </div>
@@ -105,7 +105,7 @@ const TaskModal = ({ task, isOpen, onClose, onSave }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 p-3 border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex-1 p-3 border border-gray-200 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Cancel
               </button>
