@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, LogOut } from 'lucide-react';
+import { Plus, Search, LogOut, Sun, Moon } from 'lucide-react';
 import AuthPage from './components/AuthPage';
 import TaskItem from './components/TaskItem';
 import TaskModal from './components/TaskModal';
@@ -15,6 +15,20 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (darkMode) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   const loadTasks = React.useCallback(async () => {
     if (!token) return;
@@ -112,24 +126,31 @@ const App = () => {
   if (!token) return <AuthPage onAuth={handleAuth} />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">My Tasks</h1>
-              {/* Show user info if available */}
+              <h1 className="text-xl font-bold">My Tasks</h1>
               {user && (
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-gray-700 dark:text-gray-300">
                   Welcome, <span className="font-semibold">{user.name || user.email}</span>
                   {user.email && <span className="ml-2 text-gray-400">({user.email})</span>}
                 </div>
               )}
-              <p className="text-sm text-gray-600">{completedCount} of {totalCount} completed</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{completedCount} of {totalCount} completed</p>
             </div>
-            <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-              <LogOut className="w-5 h-5" />
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                <LogOut className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setDarkMode(prev => !prev)}
+                className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -142,7 +163,7 @@ const App = () => {
             placeholder="Search tasks..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
           />
         </div>
 
@@ -150,7 +171,7 @@ const App = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="flex-1 p-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+            className="flex-1 p-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm dark:bg-gray-800 dark:text-white"
           >
             <option value="all">All Tasks</option>
             <option value="pending">Pending</option>
@@ -160,7 +181,7 @@ const App = () => {
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="flex-1 p-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+            className="flex-1 p-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm dark:bg-gray-800 dark:text-white"
           >
             <option value="all">All Priorities</option>
             <option value="High">High</option>
@@ -176,7 +197,7 @@ const App = () => {
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
           </div>
         ) : tasks.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">No tasks found</div>
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">No tasks found</div>
         ) : (
           <div className="space-y-3">
             {tasks.map(task => (
