@@ -31,24 +31,33 @@ const App = () => {
   }, [darkMode]);
 
   const loadTasks = React.useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const filters = {};
-      if (searchTerm) filters.search = searchTerm;
-      if (filterStatus !== 'all') filters.isCompleted = filterStatus === 'completed';
-      if (filterPriority !== 'all') filters.priority = filterPriority;
+  if (!token) return;
+  setLoading(true);
+  try {
+    const filters = {};
+    if (searchTerm) filters.search = searchTerm;
+    if (filterStatus !== 'all') {
+  filters.isCompleted = (filterStatus === 'completed').toString();
+}
+    if (filterPriority !== 'all') filters.priority = filterPriority;
 
-      const result = await api.getTasks(token, filters);
-      if (result.success) {
-        setTasks(result.data.tasks);
-      }
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-    } finally {
-      setLoading(false);
+    console.log('Loading tasks with filters:', filters); // ✅ Debug log
+
+    const result = await api.getTasks(token, filters);
+
+    if (result.success) {
+      console.log('Fetched tasks:', result.data.tasks); // ✅ Debug log
+      setTasks(result.data.tasks);
+    } else {
+      console.error('API responded without success:', result);
     }
-  }, [token, searchTerm, filterStatus, filterPriority]);
+  } catch (error) {
+    console.error('Failed to load tasks:', error);
+  } finally {
+    setLoading(false);
+  }
+}, [token, searchTerm, filterStatus, filterPriority]);
+
 
   useEffect(() => {
     if (token) {
@@ -92,16 +101,17 @@ const App = () => {
     }
   };
 
-  const handleToggleTask = async (taskId, isCompleted) => {
-    try {
-      const result = await api.updateTask(token, taskId, { isCompleted });
-      if (result.success) {
-        setTasks(tasks.map(t => t._id === taskId ? result.data.task : t));
-      }
-    } catch (error) {
-      console.error('Failed to toggle task:', error);
-    }
-  };
+ const handleToggleTask = async (taskId, isCompleted) => {
+  console.log('Sending toggle request:', taskId, isCompleted); // NEW
+  const result = await api.updateTask(token, taskId, { isCompleted });
+  console.log('Toggle result:', result); // NEW
+  if (result.success) {
+    setTasks(tasks.map(t => t._id === taskId ? result.data.task : t));
+  } else {
+    console.error('Toggle failed', result.message || result.error);
+  }
+};
+
 
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
