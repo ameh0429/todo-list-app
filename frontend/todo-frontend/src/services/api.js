@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://todo-list-application.up.railway.app/api';
+const API_BASE_URL = 'https://todo-list-application.up.railway.app';
 
 export const api = {
   login: async (email, password) => {
