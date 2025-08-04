@@ -37,6 +37,12 @@ export const createTask = async (req, res) => {
       userId: req.user._id,
     });
 
+     // Populate user info for response
+    await task.populate("userId", "name email");
+
+    // Send confirmation email
+    sendTaskCreationEmail(req.user, task);
+
     // Format Nigerian time (Africa/Lagos) in 12-hour format
     function formatToLagosTime(date) {
       return date?.toLocaleString("en-NG", {
@@ -59,24 +65,10 @@ export const createTask = async (req, res) => {
     };
 
     // Send response
-    res.status(201).json({
-      success: true,
-      message: "Task created successfully",
-      data: {
-        task: formattedTask,
-      },
-    });
-
-    // Populate user info for response
-    await task.populate("userId", "name email");
-
-    // Send confirmation email
-    sendTaskCreationEmail(req.user, task);
-
-    sendSuccess(res, 201, "Task created successfully", { task });
+    return sendSuccess(res, 201, "Task created successfully", { task: formattedTask });
   } catch (error) {
     console.error("Create task error:", error);
-    sendError(res, 500, "Server error during task creation");
+    return sendError(res, 500, "Server error during task creation");
   }
 };
 
