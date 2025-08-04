@@ -27,6 +27,7 @@ export const validateLogin = [
 export const validateTask = [
   body('title')
     .trim()
+    .optional()
     .isLength({ min: 1, max: 100 })
     .withMessage('Title must be between 1 and 100 characters'),
   body('description')
