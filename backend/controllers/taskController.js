@@ -198,6 +198,7 @@ export const autoCompleteTasks = async (req, res) => {
       },
       { $set: { isCompleted: true } }
     );
+    console.log(`[${new Date().toISOString()}] Auto-complete triggered`);
 
     sendSuccess(res, 200, "Overdue tasks marked as completed", {
       updatedCount: result.modifiedCount,

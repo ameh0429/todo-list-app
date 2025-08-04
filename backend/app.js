@@ -10,6 +10,10 @@ import cron from 'node-cron';
 import authRoutes from './routes/authRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 
+// Import cron routes
+import cronRoutes from './routes/cron.js';
+
+
 // Import services
 import { sendUpcomingTaskReminders } from './services/emailService.js';
 
@@ -34,6 +38,9 @@ const limiter = rateLimit({
   max: 100 // limit each IP to 100 requests per windowMs
 });
 app.use('/api/', limiter);
+
+app.use('/cron', cronRoutes);
+
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
