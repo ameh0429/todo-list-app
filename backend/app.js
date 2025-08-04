@@ -79,7 +79,7 @@ mongoose.connect(process.env.MONGODB_URI)
     process.exit(1);
   });
 
-// Schedule daily reminder emails at 9:00 AM
+// Schedule daily reminder emails every 5 minutes
 cron.schedule('*/5 * * * *', () => {
   console.log('Running upcoming task reminders...');
   sendUpcomingTaskReminders();

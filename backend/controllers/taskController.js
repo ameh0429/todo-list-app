@@ -184,6 +184,30 @@ export const getTask = async (req, res) => {
   }
 };
 
+// @desc    Auto-complete overdue tasks
+// @route   POST /api/tasks/auto-complete
+// @access  Private or Internal
+export const autoCompleteTasks = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const result = await Task.updateMany(
+      {
+        dueDate: { $lte: now },
+        isCompleted: false,
+      },
+      { $set: { isCompleted: true } }
+    );
+
+    sendSuccess(res, 200, "Overdue tasks marked as completed", {
+      updatedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Auto-complete error:", error);
+    sendError(res, 500, "Server error during auto-completion");
+  }
+};
+
 // @desc    Update task
 // @route   PUT /api/tasks/:id
 // @access  Private

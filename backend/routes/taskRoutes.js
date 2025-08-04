@@ -3,6 +3,7 @@ import {
   createTask,
   getTasks,
   getTask,
+  autoCompleteTasks,
   updateTask,
   deleteTask
 } from '../controllers/taskController.js';
@@ -22,6 +23,10 @@ router.use(protect);
 router.route('/tasks')
   .get(validateTaskQuery, getTasks)
   .post(validateTask, createTask);
+
+  // route for auto-completion
+router.route('/tasks/auto-complete')
+  .post(autoCompleteTasks); // Auto-complete overdue tasks
 
 router.route('/tasks/:id')
   .get(validateTaskId, getTask)
