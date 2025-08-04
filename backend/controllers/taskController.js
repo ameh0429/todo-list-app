@@ -17,14 +17,21 @@ export const createTask = async (req, res) => {
     const { title, description, dueDate, priority } = req.body;
 
     // Validate due date is in future
-    if (dueDate && new Date(dueDate) <= new Date()) {
+    const parsedDueDate = new Date(dueDate);
+
+    if (!dueDate || isNaN(parsedDueDate.getTime())) {
+      return sendError(res, 400, "Due date must be a valid future date");
+    }
+
+    if (parsedDueDate <= new Date()) {
       return sendError(res, 400, "Due date must be in the future");
     }
+    dueDate: parsedDueDate;
 
     // Create task
     const task = await Task.create({
-      title: title.trim(),
-      description: description?.trim(),
+      title: title.trim() || "",
+      description: description?.trim() || "",
       dueDate: dueDate ? new Date(dueDate) : undefined,
       priority: priority || "Medium",
       userId: req.user._id,
@@ -190,24 +197,33 @@ export const getTask = async (req, res) => {
 export const autoCompleteTasks = async (req, res) => {
   try {
     const now = new Date();
+    const buffer = new Date(now.getTime() + 1000);
+
+    const overdueTasks = await Task.find({
+      dueDate: { $lte: now },
+      isCompleted: false
+    });
+
+    console.log(`[${new Date().toISOString()}] Auto-complete triggered`);
+    console.log("Matched overdue tasks:", overdueTasks.map(t => ({
+      title: t.title,
+      dueDate: t.dueDate,
+      isCompleted: t.isCompleted
+    })));
+
     const result = await Task.updateMany(
-      {
-        dueDate: { $lte: now },
-        isCompleted: false,
-      },
+      { dueDate: { $lte: buffer }, isCompleted: false },
       { $set: { isCompleted: true } }
     );
-    console.log(`[${new Date().toISOString()}] Auto-complete triggered`);
 
     sendSuccess(res, 200, "Overdue tasks marked as completed", {
-      updatedCount: result.modifiedCount,
+      updatedCount: result.modifiedCount
     });
   } catch (error) {
     console.error("Auto-complete error:", error);
     sendError(res, 500, "Server error during auto-completion");
   }
 };
-
 // @desc    Update task
 // @route   PUT /api/tasks/:id
 // @access  Private

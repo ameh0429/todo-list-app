@@ -15,6 +15,7 @@ const taskSchema = new mongoose.Schema(
     },
     dueDate: {
       type: Date,
+      required: true,
       validate: {
         validator: function (value) {
           return !value || value > new Date();
