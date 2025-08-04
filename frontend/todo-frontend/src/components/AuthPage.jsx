@@ -37,7 +37,7 @@ const AuthPage = ({ onAuth }) => {
           <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">TodoApp</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">DailyTaskTracker</h1>
           <p className="text-gray-600">
             {isLogin ? 'Welcome back!' : 'Create your account'}
           </p>
