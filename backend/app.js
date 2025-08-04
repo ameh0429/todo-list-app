@@ -39,6 +39,12 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+//Log all incoming requests
+app.use((req, res, next) => {
+  console.log("Incoming request to:", req.path);
+  next();
+});
+
 app.use('/cron', cronRoutes);
 
 

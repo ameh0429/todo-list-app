@@ -190,7 +190,6 @@ export const getTask = async (req, res) => {
 export const autoCompleteTasks = async (req, res) => {
   try {
     const now = new Date();
-
     const result = await Task.updateMany(
       {
         dueDate: { $lte: now },
