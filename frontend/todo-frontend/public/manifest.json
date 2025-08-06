@@ -17,5 +17,13 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "screenshots": [
+  {
+    "src": "/screenshots/home.png",
+    "sizes": "640x480",
+    "type": "image/png",
+    "label": "Home screen"
+  }
+]
 }

@@ -8,7 +8,7 @@ const urlsToCache = [
 ];
 
 // Install the service worker
-self.addEventListener('install', event => {
+"self".addEventListener('install', event => {
   console.log('[ServiceWorker] Install');
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -20,7 +20,7 @@ self.addEventListener('install', event => {
 });
 
 // Activate the service worker
-self.addEventListener('activate', event => {
+"self".addEventListener('activate', event => {
   console.log('[ServiceWorker] Activate');
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -37,7 +37,7 @@ self.addEventListener('activate', event => {
 });
 
 // Intercept fetch requests
-self.addEventListener('fetch', event => {
+"self".addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {

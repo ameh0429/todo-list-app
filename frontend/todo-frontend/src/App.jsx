@@ -4,6 +4,7 @@ import AuthPage from "./components/AuthPage";
 import TaskItem from "./components/TaskItem";
 import TaskModal from "./components/TaskModal";
 import { api } from "./services/api";
+import WelcomeMessage from "./components/WelcomeMessage";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -12,6 +13,8 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showButton, setShowButton] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
@@ -57,6 +60,30 @@ const App = () => {
       setLoading(false);
     }
   }, [token, searchTerm, filterStatus, filterPriority]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowButton(true); // Show install button now
+      console.log("Install prompt captured");
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        console.log(`User response to install: ${choiceResult.outcome}`);
+        setDeferredPrompt(null);
+        setShowButton(false);
+      });
+    }
+  };
 
   useEffect(() => {
     let deferredPrompt;
@@ -220,6 +247,11 @@ const App = () => {
           />
         </div>
 
+        <div className="p-4">
+          <WelcomeMessage />
+          {/* Your other components */}
+        </div>
+
         <div className="flex gap-2">
           <select
             value={filterStatus}
@@ -267,6 +299,14 @@ const App = () => {
             ))}
           </div>
         )}
+      </div>
+
+      <div>
+        <h1>Welcome to your DailyTaskTracker</h1>
+        {showButton && (
+          <button onClick={handleInstallClick}>Install App</button>
+        )}
+        {/* Rest of your app content */}
       </div>
 
       <button
