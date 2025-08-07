@@ -46,3 +46,13 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
+self.addEventListener('install', (event) => {
+  // Activate new service worker immediately
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  // Take control of all clients (tabs/pages)
+  event.waitUntil(self.clients.claim());
+});

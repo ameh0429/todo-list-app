@@ -5,6 +5,7 @@ import TaskItem from "./components/TaskItem";
 import TaskModal from "./components/TaskModal";
 import { api } from "./services/api";
 import WelcomeMessage from "./components/WelcomeMessage";
+import { register } from "./serviceWorkerRegistration";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -14,6 +15,7 @@ const App = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -60,6 +62,14 @@ const App = () => {
       setLoading(false);
     }
   }, [token, searchTerm, filterStatus, filterPriority]);
+
+  useEffect(() => {
+    register({
+      onUpdate: () => {
+        setUpdateAvailable(true);
+      },
+    });
+  }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -245,6 +255,16 @@ const App = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
           />
+        </div>
+
+        <div>
+          {updateAvailable && (
+            <div className="update-banner">
+              <p>🔄 New version available!</p>
+              <button onClick={() => window.location.reload()}>Refresh</button>
+            </div>
+          )}
+          {/* Your app content */}
         </div>
 
         <div className="p-4">
