@@ -322,7 +322,7 @@ const App = () => {
       </div>
 
       <div>
-        <h1>Welcome to your DailyTaskTracker</h1>
+        {/* <h1>Welcome to your DailyTaskTracker</h1> */}
         {showButton && (
           <button onClick={handleInstallClick}>Install App</button>
         )}
