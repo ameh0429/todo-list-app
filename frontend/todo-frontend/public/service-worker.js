@@ -1,58 +1,88 @@
-const CACHE_NAME = 'todo-app-cache-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
+const CACHE_VERSION = 'v3'; // Increment this on every deploy
+const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `dynamic-cache-${CACHE_VERSION}`;
+
+// List of static assets to cache
+const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  '/offline.html' // Optional fallback page
 ];
 
-// Install the service worker
+// Install SW and pre-cache static assets
 self.addEventListener('install', event => {
-  console.log('[ServiceWorker] Install');
+  console.log('[ServiceWorker] Installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('[ServiceWorker] Caching app shell');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(STATIC_CACHE).then(cache => {
+      console.log('[ServiceWorker] Pre-caching static assets');
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
+  self.skipWaiting(); // Activate immediately
 });
 
-// Activate the service worker
+// Activate SW and remove old caches
 self.addEventListener('activate', event => {
-  console.log('[ServiceWorker] Activate');
+  console.log('[ServiceWorker] Activating...');
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then(keys => {
       return Promise.all(
-        cacheNames.map(name => {
-          if (name !== CACHE_NAME) {
-            console.log('[ServiceWorker] Removing old cache:', name);
-            return caches.delete(name);
+        keys.map(key => {
+          if (key !== STATIC_CACHE && key !== DYNAMIC_CACHE) {
+            console.log('[ServiceWorker] Removing old cache:', key);
+            return caches.delete(key);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Intercept fetch requests
+// Fetch strategy
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return cached response if found, else fetch from network
-        return response || fetch(event.request);
+  const { request } = event;
+
+  // 1️⃣ HTML: Network-first strategy
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          // Save latest HTML to dynamic cache
+          const copy = response.clone();
+          caches.open(DYNAMIC_CACHE).then(cache => cache.put(request, copy));
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cached HTML or offline page
+          return caches.match(request) || caches.match('/offline.html');
+        })
+    );
+    return;
+  }
+
+  // 2️⃣ Static assets: Cache-first strategy
+  if (STATIC_ASSETS.some(asset => request.url.includes(asset))) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        return cached || fetch(request).then(networkRes => {
+          const copy = networkRes.clone();
+          caches.open(STATIC_CACHE).then(cache => cache.put(request, copy));
+          return networkRes;
+        });
       })
+    );
+    return;
+  }
+
+  // 3️⃣ Other requests (API calls, etc.): Network-first with fallback
+  event.respondWith(
+    fetch(request)
+      .then(networkRes => {
+        const copy = networkRes.clone();
+        caches.open(DYNAMIC_CACHE).then(cache => cache.put(request, copy));
+        return networkRes;
+      })
+      .catch(() => caches.match(request))
   );
-});
-
-self.addEventListener('install', (event) => {
-  // Activate new service worker immediately
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  // Take control of all clients (tabs/pages)
-  event.waitUntil(self.clients.claim());
 });
