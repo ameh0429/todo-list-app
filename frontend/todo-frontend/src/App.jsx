@@ -209,7 +209,7 @@ const App = () => {
             <div>
               <h1 className="text-xl font-bold">My Tasks</h1>
               {user && user.name && (
-                <div className="mt-1 text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate max-w-[90%] sm:max-w-none">
+                <div className="mt-1 text-sm sm:text-base text-gray-700 dark:text-gray-300 break-words">
                   Welcome, <span className="font-semibold">{user.name}</span>
                 </div>
               )}
