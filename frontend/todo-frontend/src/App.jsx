@@ -208,15 +208,9 @@ const App = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold">My Tasks</h1>
-              {user && (
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  Welcome,{" "}
-                  <span className="font-semibold">
-                    {user.name || user.email}
-                  </span>
-                  {user.email && (
-                    <span className="ml-2 text-gray-400">({user.email})</span>
-                  )}
+              {user && user.name && (
+                <div className="mt-1 text-sm sm:text-base text-gray-700 dark:text-gray-300 truncate max-w-[90%] sm:max-w-none">
+                  Welcome, <span className="font-semibold">{user.name}</span>
                 </div>
               )}
               <p className="text-sm text-gray-600 dark:text-gray-400">
