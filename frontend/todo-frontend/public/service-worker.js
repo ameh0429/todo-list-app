@@ -39,6 +39,20 @@ self.addEventListener('activate', event => {
   );
 });
 
+self.addEventListener("push", (event) => {
+  const data = event.data.json();
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: "/icons/badge-72x72.png",
+      vibrate: [200, 100, 200], // alarm-like vibration
+      requireInteraction: true // stays until dismissed
+    })
+  );
+});
+
+
 // Fetch strategy
 self.addEventListener('fetch', event => {
   const { request } = event;
