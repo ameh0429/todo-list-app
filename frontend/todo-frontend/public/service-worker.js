@@ -40,35 +40,51 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener("push", (event) => {
-  const data = event.data.json();
+  let data = {};
+
+  try {
+    data = event.data.json();
+  } catch (e) {
+    // Fallback for plain text push messages
+    data = {
+      title: "Notification",
+      body: event.data.text(),
+      icon: "/icons/icon-192x192.png" // default icon if not provided
+    };
+  }
+
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: data.icon,
       badge: "/icons/badge-72x72.png",
-      vibrate: [200, 100, 200], // alarm-like vibration
-      requireInteraction: true // stays until dismissed
+      vibrate: [200, 100, 200],
+      requireInteraction: true
     })
   );
 });
+
 
 
 // Fetch strategy
 self.addEventListener('fetch', event => {
   const { request } = event;
 
+  // Only handle GET requests for caching
+  if (request.method !== 'GET') {
+    return; // Skip non-GET requests like POST
+  }
+
   // 1️⃣ HTML: Network-first strategy
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then(response => {
-          // Save latest HTML to dynamic cache
           const copy = response.clone();
           caches.open(DYNAMIC_CACHE).then(cache => cache.put(request, copy));
           return response;
         })
         .catch(() => {
-          // Fallback to cached HTML or offline page
           return caches.match(request) || caches.match('/offline.html');
         })
     );
