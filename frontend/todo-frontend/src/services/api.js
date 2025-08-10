@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://todo-list-application.up.railway.app/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://todo-list-application.up.railway.app/api' || "http://localhost:3000";
 
 export const api = {
   login: async (email, password) => {
