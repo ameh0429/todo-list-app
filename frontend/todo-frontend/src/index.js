@@ -26,46 +26,16 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
     .catch(err => console.error('Service Worker registration failed:', err));
 }
 
+
 const VAPID_PUBLIC_KEY = process.env.REACT_APP_PUBLIC_VAPID_KEY;
-const API_URL = 'http://localhost:3000/api/save-subscription'; // Adjust if needed
-const JWT_TOKEN = process.env.REACT_APP_JWT_TOKEN
-
-async function subscribeUserToPush(registration) {
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') {
-    alert('Notification permission denied');
-    return;
-  }
-
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-  });
-
-  // Wrap subscription in an object
-  const payload = {
-    subscription: subscription.toJSON() // ensures it's serializable
-  };
-console.log('Subscription object:', payload);
-
-  // Send subscription to backend
-  await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${JWT_TOKEN}`
-    },
-    body: JSON.stringify(payload),
-  });
-
-  console.log('Push subscription sent to server');
-}
+const API_URL = 'https://todo-list-application.up.railway.app/api/save-subscription'; 
+const JWT_TOKEN = process.env.REACT_APP_JWT_TOKEN;
 
 function urlBase64ToUint8Array(base64String) {
   try {
     if (typeof base64String !== 'string') {
       console.warn('Expected a string but got:', base64String);
-      return new Uint8Array(); // Return empty array as fallback
+      return new Uint8Array();
     }
 
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -77,9 +47,110 @@ function urlBase64ToUint8Array(base64String) {
     return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
   } catch (error) {
     console.error('Failed to convert base64 string to Uint8Array:', error);
-    return new Uint8Array(); // Safe fallback
+    return new Uint8Array();
   }
 }
+
+async function subscribeUserToPush(registration) {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('Notification permission denied');
+      return;
+    }
+
+    if (!VAPID_PUBLIC_KEY || typeof VAPID_PUBLIC_KEY !== 'string') {
+      console.error('Invalid VAPID public key:', VAPID_PUBLIC_KEY);
+      return;
+    }
+
+    const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey
+    });
+
+    const payload = {
+      subscription: subscription.toJSON()
+    };
+
+    console.log('Subscription object:', payload);
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${JWT_TOKEN}`
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}`);
+    }
+
+    console.log('Push subscription sent to server');
+  } catch (error) {
+    console.error('Push subscription failed:', error);
+    alert('Failed to subscribe to notifications. See console for details.');
+  }
+}
+
+// const VAPID_PUBLIC_KEY = process.env.REACT_APP_PUBLIC_VAPID_KEY;
+// const API_URL = 'http://localhost:3000/api/save-subscription'; 
+// const JWT_TOKEN = process.env.REACT_APP_JWT_TOKEN
+
+// async function subscribeUserToPush(registration) {
+//   const permission = await Notification.requestPermission();
+//   if (permission !== 'granted') {
+//     alert('Notification permission denied');
+//     return;
+//   }
+
+//   const subscription = await registration.pushManager.subscribe({
+//     userVisibleOnly: true,
+//     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+//   });
+
+//   // Wrap subscription in an object
+//   const payload = {
+//     subscription: subscription.toJSON() // ensures it's serializable
+//   };
+// console.log('Subscription object:', payload);
+
+//   // Send subscription to backend
+//   await fetch(API_URL, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'Authorization': `Bearer ${JWT_TOKEN}`
+//     },
+//     body: JSON.stringify(payload),
+//   });
+
+//   console.log('Push subscription sent to server');
+// }
+
+// function urlBase64ToUint8Array(base64String) {
+//   try {
+//     if (typeof base64String !== 'string') {
+//       console.warn('Expected a string but got:', base64String);
+//       return new Uint8Array(); // Return empty array as fallback
+//     }
+
+//     const padding = '='.repeat((4 - base64String.length % 4) % 4);
+//     const base64 = (base64String + padding)
+//       .replace(/-/g, '+')
+//       .replace(/_/g, '/');
+
+//     const rawData = window.atob(base64);
+//     return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+//   } catch (error) {
+//     console.error('Failed to convert base64 string to Uint8Array:', error);
+//     return new Uint8Array(); // Safe fallback
+//   }
+// }
 
 
 // if ('serviceWorker' in navigator && 'PushManager' in window) {
