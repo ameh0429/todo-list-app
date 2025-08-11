@@ -36,6 +36,11 @@ const taskSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    endpoint: String,
+    keys: {
+      p256dh: String,
+      auth: String,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

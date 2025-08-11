@@ -1,26 +1,29 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-import cron from 'node-cron';
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import helmet from "helmet";
+import bodyParser from "body-parser";
+import rateLimit from "express-rate-limit";
+import dotenv from "dotenv";
+import cron from "node-cron";
 import webpush from "web-push";
+import Subscription from "./models/Subscription.js";
 // import fetch from "node-fetch";
 
 // Import routes
-import authRoutes from './routes/authRoutes.js';
-import taskRoutes from './routes/taskRoutes.js';
+import authRoutes from "./routes/authRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 
 // Import cron routes
-import cronRoutes from './routes/cron.js';
+import cronRoutes from "./routes/cron.js";
 
+import Task from "./models/Task.js";
 
 // Import services
-import { sendUpcomingTaskReminders } from './services/emailService.js';
+import { sendUpcomingTaskReminders } from "./services/emailService.js";
 
 // Import middleware
-import { errorHandler } from './middleware/errorMiddleware.js';
+import { errorHandler } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
 
@@ -30,17 +33,26 @@ const PORT = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
+
+const allowedOrigins = [
+  "https://todo-list-app-dun-beta.vercel.app",
+  "http://localhost:3001",
+];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://todo-list-app-dun-beta.vercel.app',
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
 }));
+
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
 });
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 
 //Log all incoming requests
 app.use((req, res, next) => {
@@ -48,47 +60,86 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/cron', cronRoutes);
-
+app.use("/cron", cronRoutes);
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 // Routes
-app.use('/api', authRoutes);
-app.use('/api', taskRoutes);
+app.use("/api", authRoutes);
+app.use("/api", taskRoutes);
 
-// Generate VAPID keys once (keep private key safe)
-const vapidKeys = webpush.generateVAPIDKeys();
-
+// Set up web push notifications
 webpush.setVapidDetails(
-  "mailto:you@example.com",
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
+  "mailto:amehmathiasejeh40@gmail.com",
+  process.env.PUBLIC_VAPID_KEY,
+  process.env.PRIVATE_VAPID_KEY
 );
 
-// Store user's subscription in DB when they allow notifications
-app.post("/subscribe", (req, res) => {
-  const subscription = req.body;
-  saveSubscriptionToDB(subscription);
-  res.status(201).json({});
+// // Save push subscription
+// app.post('/api/save-subscription', async (req, res) => {
+//   const existing = await Subscription.findOne({ endpoint: req.body.endpoint });
+//   if (!existing) {
+//     await Subscription.create(req.body);
+//   }
+//   res.status(201).json({ message: 'Subscription saved' });
+// });
+
+// Save a task with due time
+app.post("/api/add-task", (req, res) => {
+  const { title, dueTime } = req.body;
+  tasks.push({ title, dueTime: new Date(dueTime) });
+  res.status(201).json({ message: "Task saved" });
 });
 
+// Store user's subscription in DB when they allow notifications
+// app.post("/subscribe", (req, res) => {
+//   const subscription = req.body;
+//   saveSubscriptionToDB(subscription);
+//   res.status(201).json({});
+// });
+
 // Send notification at due time
-function sendNotification(subscription, task) {
-  const payload = JSON.stringify({
-    title: "Task Reminder",
-    body: `Your task "${task.title}" is due now!`,
-    icon: "/icons/icon-192x192.png"
+// function sendNotification(subscription, task) {
+//   const payload = JSON.stringify({
+//     title: "Task Reminder",
+//     body: `Your task "${task.title}" is due now!`,
+//     icon: "/icons/icon-192x192.png"
+//   });
+//   webpush.sendNotification(subscription, payload);
+// }
+
+// Check every minute for due tasks
+cron.schedule("* * * * *", async () => {
+  const now = new Date();
+  const dueTasks = await Task.find({ dueTime: { $lte: now } });
+
+  if (dueTasks.length === 0) return;
+
+  const subscriptions = await Subscription.find();
+
+  dueTasks.forEach(async (task) => {
+    const payload = JSON.stringify({
+      title: "Task Due!",
+      body: `Don't forget: ${task.title}`,
+    });
+
+    subscriptions.forEach((sub) => {
+      webpush.sendNotification(sub, payload).catch((err) => {
+        console.error("Push error:", err);
+      });
+    });
+
+    await Task.deleteOne({ _id: task._id }); // Remove after notifying
   });
-  webpush.sendNotification(subscription, payload);
-}
+});
 
 //   // Notification setting
 // app.post("/send-notification", async (req, res) => {
 //   const { token, title, body } = req.body;
-  
+
 //   const response = await fetch("https://fcm.googleapis.com/fcm/send", {
 //     method: "POST",
 //     headers: {
@@ -105,11 +156,11 @@ function sendNotification(subscription, task) {
 // });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    message: 'Todo API is running',
-    timestamp: new Date().toISOString()
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "Todo API is running",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -120,15 +171,16 @@ app.use(errorHandler);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: "Route not found",
   });
 });
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI)
+mongoose
+  .connect(process.env.MONGODB_URI)
   .then(() => {
-    console.log('Connected to MongoDB');
-    
+    console.log("Connected to MongoDB");
+
     // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -136,23 +188,27 @@ mongoose.connect(process.env.MONGODB_URI)
     });
   })
   .catch((error) => {
-    console.error('MongoDB connection error:', error);
+    console.error("MongoDB connection error:", error);
     process.exit(1);
   });
 
 // Schedule daily reminder emails every 5 minutes
-cron.schedule('*/5 * * * *', () => {
-  console.log('Running upcoming task reminders...');
-  sendUpcomingTaskReminders();
-}, {
-  timezone: "UTC"
-});
+cron.schedule(
+  "*/5 * * * *",
+  () => {
+    console.log("Running upcoming task reminders...");
+    sendUpcomingTaskReminders();
+  },
+  {
+    timezone: "UTC",
+  }
+);
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received');
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received");
   mongoose.connection.close(() => {
-    console.log('MongoDB connection closed');
+    console.log("MongoDB connection closed");
     process.exit(0);
   });
 });

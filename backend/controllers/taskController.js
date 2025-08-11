@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import Task from "../models/Task.js";
+import Subscription from "../models/Subscription.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
 import { sendTaskCreationEmail } from "../services/emailService.js";
 
@@ -257,6 +258,24 @@ export const updateTask = async (req, res) => {
     sendError(res, 500, "Server error during task update");
   }
 };
+
+// Subscribe task for push notifications
+export const subscribeTask = async (req, res) => {
+  console.log('Incoming subscription:', req.body);
+
+  const existing = await Subscription.findOne({ endpoint: req.body.endpoint });
+  if (!existing) {
+    await Subscription.create(req.body);
+  }
+  res.status(201).json({ message: 'Subscription saved' });
+};
+
+// // Save a task with due time
+// app.post('/api/add-task', (req, res) => {
+//   const { title, dueTime } = req.body;
+//   tasks.push({ title, dueTime: new Date(dueTime) });
+//   res.status(201).json({ message: 'Task saved' });
+// });
 
 // @desc    Delete task
 // @route   DELETE /api/tasks/:id

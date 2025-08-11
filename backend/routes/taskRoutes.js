@@ -4,6 +4,7 @@ import {
   getTasks,
   getTask,
   autoCompleteTasks,
+  subscribeTask,
   updateTask,
   deleteTask
 } from '../controllers/taskController.js';
@@ -27,6 +28,10 @@ router.route('/tasks')
   // route for auto-completion
 router.route('/tasks/auto-complete')
   .post(autoCompleteTasks); // Auto-complete overdue tasks
+
+  // route for subscrition
+router.route('/save-subscription')
+  .post(subscribeTask); 
 
 router.route('/tasks/:id')
   .get(validateTaskId, getTask)
