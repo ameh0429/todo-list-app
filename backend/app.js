@@ -60,8 +60,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/cron", cronRoutes);
-
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -70,6 +68,7 @@ app.use(bodyParser.json());
 // Routes
 app.use("/api", authRoutes);
 app.use("/api", taskRoutes);
+app.use("/cron", cronRoutes);
 
 // Set up web push notifications
 webpush.setVapidDetails(

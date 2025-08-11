@@ -20,7 +20,7 @@ export const requestNotificationPermission = async () => {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       const token = await getToken(messaging, {
-        vapidKey: "BJ5l-15OMY6S-mx-93YJmi2l5tN8FzSVQrNLHinUmz3EkEMd0jSJzOEoLvpTe5lFiw-MMO8gRzAx_sexGX0j1po",
+        vapidKey: process.env.REACT_APP_PUBLIC_VAPID_KEY,
       });
       console.log("FCM Token:", token);
       return token; // Send this token to your backend
