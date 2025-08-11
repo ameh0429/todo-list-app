@@ -62,11 +62,25 @@ console.log('Subscription object:', payload);
 }
 
 function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+  try {
+    if (typeof base64String !== 'string') {
+      console.warn('Expected a string but got:', base64String);
+      return new Uint8Array(); // Return empty array as fallback
+    }
+
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+  } catch (error) {
+    console.error('Failed to convert base64 string to Uint8Array:', error);
+    return new Uint8Array(); // Safe fallback
+  }
 }
+
 
 // if ('serviceWorker' in navigator && 'PushManager' in window) {
 //   navigator.serviceWorker.register('/service-worker.js')
