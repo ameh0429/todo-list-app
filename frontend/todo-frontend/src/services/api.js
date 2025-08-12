@@ -21,34 +21,69 @@ export const api = {
   //   return await response.json();
   // },
 
+  // login: async (email, password) => {
+  //   try {
+  //     const res = await fetch(`${API_BASE_URL}/login`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, password }),
+  //     });
+
+  //     const data = await res.json();
+
+  //     if (data.data.token) {
+  //       // Store token
+  //       localStorage.setItem('token', data.data.token);
+  //       console.log("Token saved:", data.data.token);
+
+  //       // Immediately trigger push subscription
+  //       if ('serviceWorker' in navigator && 'PushManager' in window) {
+  //         navigator.serviceWorker.ready.then(swReg => {
+  //           subscribeUserToPush(swReg, data.token);
+  //         });
+  //       }
+  //     }
+
+  //     return data;
+  //   } catch (error) {
+  //     console.error("Login failed:", error);
+  //     throw error;
+  //   }
+  // },
+ 
   login: async (email, password) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const res = await fetch(`${API_BASE_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.token) {
-        // Store token
-        localStorage.setItem('token', data.token);
+    if (data?.data?.token) {
+      const token = data.data.token;
 
-        // Immediately trigger push subscription
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          navigator.serviceWorker.ready.then(swReg => {
-            subscribeUserToPush(swReg, data.token);
-          });
-        }
+      // Store token
+      localStorage.setItem("token", token);
+      console.log("Token saved:", token);
+
+      // Immediately trigger push subscription
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        navigator.serviceWorker.ready.then(swReg => {
+          subscribeUserToPush(swReg, token);
+        });
       }
-
-      return data;
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
+    } else {
+      console.error("No token found in login response:", data);
     }
-  },
+
+    return data;
+  } catch (error) {
+    console.error("Login failed:", error);
+    throw error;
+  }
+},
 
   register: async (name, email, password) => {
     const response = await fetch(`${API_BASE_URL}/register`, {
