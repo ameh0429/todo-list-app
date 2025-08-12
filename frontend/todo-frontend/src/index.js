@@ -88,6 +88,17 @@ export async function subscribeUserToPush(registration, token) {
       applicationServerKey
     });
 
+//     const requestNotificationPermission = () => {
+//   if (Notification.permission === 'default') {
+//     Notification.requestPermission().then(permission => {
+//       if (permission === 'granted') {
+//         console.log('Notifications enabled');
+//       }
+//     });
+//   }
+// };
+
+
     const payload = { subscription: subscription.toJSON() };
 
     console.log('Subscription object:', payload);

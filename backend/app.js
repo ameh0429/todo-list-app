@@ -104,14 +104,14 @@ app.post("/api/add-task", (req, res) => {
 // });
 
 // Send notification at due time
-// function sendNotification(subscription, task) {
-//   const payload = JSON.stringify({
-//     title: "Task Reminder",
-//     body: `Your task "${task.title}" is due now!`,
-//     icon: "/icons/icon-192x192.png"
-//   });
-//   webpush.sendNotification(subscription, payload);
-// }
+function sendNotification(subscription, task) {
+  const payload = JSON.stringify({
+    title: "Task Reminder",
+    body: `Your task "${task.title}" is due now!`,
+    icon: "/icons/icon-192x192.png"
+  });
+  webpush.sendNotification(subscription, payload);
+}
 
 // Check every minute for due tasks
 cron.schedule("* * * * *", async () => {
