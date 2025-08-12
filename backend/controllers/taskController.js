@@ -259,16 +259,7 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// Subscribe task for push notifications
-export const subscribeTask = async (req, res) => {
-  console.log('Incoming subscription:', req.body);
 
-  const existing = await Subscription.findOne({ endpoint: req.body.endpoint });
-  if (!existing) {
-    await Subscription.create(req.body);
-  }
-  res.status(201).json({ message: 'Subscription saved' });
-};
 
 // // Save a task with due time
 // app.post('/api/add-task', (req, res) => {

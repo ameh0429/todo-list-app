@@ -8,6 +8,8 @@ import dotenv from "dotenv";
 import cron from "node-cron";
 import webpush from "web-push";
 import Subscription from "./models/Subscription.js";
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
+
 // import fetch from "node-fetch";
 
 // Import routes
@@ -69,6 +71,7 @@ app.use(bodyParser.json());
 app.use("/api", authRoutes);
 app.use("/api", taskRoutes);
 app.use("/cron", cronRoutes);
+app.use('/api', subscriptionRoutes);
 
 // Set up web push notifications
 webpush.setVapidDetails(
