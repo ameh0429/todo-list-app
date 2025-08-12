@@ -17,24 +17,29 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 //   });
 // }
 
-
 if ('serviceWorker' in navigator && 'PushManager' in window) {
   window.addEventListener('load', () => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      console.warn('No token found. Push subscription will be skipped until user logs in.');
+      return;
+    }
+
     navigator.serviceWorker.register('/service-worker.js')
       .then(reg => {
         console.log('Service Worker registered:', reg);
-        // Wait until the service worker is ready
-        navigator.serviceWorker.ready.then(swReg => {
-          subscribeUserToPush(swReg);
-        });
+        return navigator.serviceWorker.ready;
+      })
+      .then(swReg => {
+        subscribeUserToPush(swReg, token);
       })
       .catch(err => console.error('Service Worker registration failed:', err));
   });
 }
 
 const VAPID_PUBLIC_KEY = process.env.REACT_APP_PUBLIC_VAPID_KEY;
-const API_URL = 'https://todo-list-application.up.railway.app/api/save-subscription'; 
-// const JWT_TOKEN = process.env.REACT_APP_JWT_TOKEN;
+const API_URL = 'https://todo-list-application.up.railway.app/api/save-subscription';
 
 function urlBase64ToUint8Array(base64String) {
   try {
@@ -56,7 +61,7 @@ function urlBase64ToUint8Array(base64String) {
   }
 }
 
-async function subscribeUserToPush(registration) {
+export async function subscribeUserToPush(registration, token) {
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
@@ -83,13 +88,10 @@ async function subscribeUserToPush(registration) {
       applicationServerKey
     });
 
-    const payload = {
-      subscription: subscription.toJSON()
-    };
+    const payload = { subscription: subscription.toJSON() };
 
     console.log('Subscription object:', payload);
 
-    const token = localStorage.getItem('token');
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
@@ -109,6 +111,100 @@ async function subscribeUserToPush(registration) {
     alert('Failed to subscribe to notifications. See console for details.');
   }
 }
+
+
+
+// if ('serviceWorker' in navigator && 'PushManager' in window) {
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker.register('/service-worker.js')
+//       .then(reg => {
+//         console.log('Service Worker registered:', reg);
+//         // Wait until the service worker is ready
+//         navigator.serviceWorker.ready.then(swReg => {
+//           subscribeUserToPush(swReg);
+//         });
+//       })
+//       .catch(err => console.error('Service Worker registration failed:', err));
+//   });
+// }
+
+// const VAPID_PUBLIC_KEY = process.env.REACT_APP_PUBLIC_VAPID_KEY;
+// const API_URL = 'https://todo-list-application.up.railway.app/api/save-subscription'; 
+// // const JWT_TOKEN = process.env.REACT_APP_JWT_TOKEN;
+
+// function urlBase64ToUint8Array(base64String) {
+//   try {
+//     if (typeof base64String !== 'string') {
+//       console.warn('Expected a string but got:', base64String);
+//       return new Uint8Array();
+//     }
+
+//     const padding = '='.repeat((4 - base64String.length % 4) % 4);
+//     const base64 = (base64String + padding)
+//       .replace(/-/g, '+')
+//       .replace(/_/g, '/');
+
+//     const rawData = window.atob(base64);
+//     return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+//   } catch (error) {
+//     console.error('Failed to convert base64 string to Uint8Array:', error);
+//     return new Uint8Array();
+//   }
+// }
+
+// async function subscribeUserToPush(registration) {
+//   try {
+//     const permission = await Notification.requestPermission();
+//     if (permission !== 'granted') {
+//       alert('Notification permission denied');
+//       return;
+//     }
+
+//     if (!VAPID_PUBLIC_KEY || typeof VAPID_PUBLIC_KEY !== 'string') {
+//       console.error('Invalid VAPID public key:', VAPID_PUBLIC_KEY);
+//       return;
+//     }
+
+//     const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+
+//     // Unsubscribe if an old subscription exists
+//     const existingSubscription = await registration.pushManager.getSubscription();
+//     if (existingSubscription) {
+//       await existingSubscription.unsubscribe();
+//       console.log('Unsubscribed from previous push subscription');
+//     }
+
+//     const subscription = await registration.pushManager.subscribe({
+//       userVisibleOnly: true,
+//       applicationServerKey
+//     });
+
+//     const payload = {
+//       subscription: subscription.toJSON()
+//     };
+
+//     console.log('Subscription object:', payload);
+
+//     const token = localStorage.getItem('token');
+//     const response = await fetch(API_URL, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${token}`
+//       },
+//       body: JSON.stringify(payload),
+//     });
+
+//     if (!response.ok) {
+//       throw new Error(`Server responded with ${response.status}`);
+//     }
+
+//     console.log('Push subscription sent to server');
+//   } catch (error) {
+//     console.error('Push subscription failed:', error);
+//     alert('Failed to subscribe to notifications. See console for details.');
+//   }
+// }
 
 
 // if ('serviceWorker' in navigator && 'PushManager' in window) {

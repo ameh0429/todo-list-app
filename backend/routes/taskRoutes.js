@@ -29,7 +29,7 @@ router.route('/tasks')
 router.route('/tasks/auto-complete')
   .post(autoCompleteTasks); // Auto-complete overdue tasks
 
-  // route for subscrition
+  // route for subscription
 router.route('/save-subscription')
   .post(subscribeTask); 
 

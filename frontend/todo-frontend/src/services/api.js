@@ -1,22 +1,53 @@
+import { subscribeUserToPush } from '../index.js';
+
 const API_BASE_URL =
   process.env.REACT_APP_API_URL ||
   "https://todo-list-application.up.railway.app/api" ||
   "http://localhost:3000";
 
 export const api = {
+  // login: async (email, password) => {
+  //   const response = await fetch(`${API_BASE_URL}/login`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ email, password }),
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       if (data.token) {
+  //         localStorage.setItem('token', data.token);
+  //       }
+  //     });
+  //   return await response.json();
+  // },
+
   login: async (email, password) => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
+    try {
+      const res = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-    return await response.json();
+
+      const data = await res.json();
+
+      if (data.token) {
+        // Store token
+        localStorage.setItem('token', data.token);
+
+        // Immediately trigger push subscription
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          navigator.serviceWorker.ready.then(swReg => {
+            subscribeUserToPush(swReg, data.token);
+          });
+        }
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
   },
 
   register: async (name, email, password) => {
