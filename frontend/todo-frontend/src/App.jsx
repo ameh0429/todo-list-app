@@ -201,6 +201,24 @@ const App = () => {
 
   if (!token) return <AuthPage onAuth={handleAuth} />;
 
+
+const API_URL = 'https://todo-list-application.up.railway.app/api/send-test-notification';
+  const sendTestNotification = async () => {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // if needed
+      },
+      body: JSON.stringify({ userId: user._id })
+    });
+    console.log('Test notification sent');
+  } catch (error) {
+    console.error('Failed to send test notification:', error);
+  }
+};
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors">
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -341,6 +359,8 @@ const App = () => {
         }}
         onSave={editingTask ? handleUpdateTask : handleCreateTask}
       />
+
+        <button onClick={sendTestNotification}>Send Test Notification</button>
 
       <button
         id="installButton"

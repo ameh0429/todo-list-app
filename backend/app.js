@@ -9,6 +9,8 @@ import cron from "node-cron";
 import webpush from "web-push";
 import Subscription from "./models/Subscription.js";
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import User from "./models/User.js";
+// import Subscription from "../models/User.js";
 
 // import fetch from "node-fetch";
 
@@ -136,6 +138,33 @@ cron.schedule("* * * * *", async () => {
 
     await Task.deleteOne({ _id: task._id }); // Remove after notifying
   });
+});
+
+app.post('/api/send-test-notification', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Fetch the user's push subscription from your database
+    const user = await User.findById(userId);
+    // const user = await Subscription.findById(userId);
+    if (!user || !user.pushSubscription) {
+      return res.status(404).json({ error: 'User or subscription not found' });
+    }
+
+    // Send a test push notification
+    await webpush.sendNotification(
+      user.pushSubscription,
+      JSON.stringify({
+        title: 'Test Notification',
+        body: 'This is a test push notification from your Todo List App!'
+      })
+    );
+
+    res.status(200).json({ message: 'Test notification sent successfully' });
+  } catch (error) {
+    console.error('Error sending test notification:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
 });
 
 //   // Notification setting

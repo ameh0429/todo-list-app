@@ -1,14 +1,6 @@
 // models/Subscription.js
 import mongoose from 'mongoose';
 
-// const subscriptionSchema = new mongoose.Schema({
-//   endpoint: String,
-//   keys: {
-//     p256dh: String,
-//     auth: String
-//   }
-// });
-
 const subscriptionSchema = new mongoose.Schema({
   endpoint: { type: String, required: true, unique: true },
   keys: {
