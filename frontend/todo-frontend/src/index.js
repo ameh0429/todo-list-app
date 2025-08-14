@@ -4,19 +4,6 @@ import App from './App';
 import './index.css';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
-// if ('serviceWorker' in navigator) {
-//   window.addEventListener('load', () => {
-//     navigator.serviceWorker
-//       .register('/service-worker.js')
-//       .then(registration => {
-//         console.log('Service Worker registered with scope:', registration.scope);
-//       })
-//       .catch(error => {
-//         console.log('Service Worker registration failed:', error);
-//       });
-//   });
-// }
-
 if ('serviceWorker' in navigator && 'PushManager' in window) {
   window.addEventListener('load', () => {
     const token = localStorage.getItem('token');
@@ -40,6 +27,39 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
 
 const VAPID_PUBLIC_KEY = process.env.REACT_APP_PUBLIC_VAPID_KEY;
 const API_URL = 'https://todo-list-application.up.railway.app/api/save-subscription';
+
+// Decode base64 (JWT-safe) payload to JSON
+function decodeJwtPayload(token) {
+  try {
+    // Split the JWT into [header, payload, signature]
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+
+    const payloadPart = parts[1];
+    if (!payloadPart) return null;
+
+    // Convert base64url → base64
+    const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+
+    // Add padding if missing
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+
+    // Decode & parse JSON
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch (err) {
+    console.error('Failed to decode JWT payload:', err);
+    return null;
+  }
+}
+
+function getUserIdFromToken(token) {
+  const payload = decodeJwtPayload(token);
+  if (!payload) return null;
+  // Support common claim names
+  return payload.userId || payload._id || payload.id || payload.sub || null;
+}
+
 
 function urlBase64ToUint8Array(base64String) {
   try {
@@ -88,18 +108,19 @@ export async function subscribeUserToPush(registration, token) {
       applicationServerKey
     });
 
-//     const requestNotificationPermission = () => {
-//   if (Notification.permission === 'default') {
-//     Notification.requestPermission().then(permission => {
-//       if (permission === 'granted') {
-//         console.log('Notifications enabled');
-//       }
-//     });
-//   }
-// };
+    const userId = getUserIdFromToken(token);
+    if (!userId) {
+      console.warn('Could not extract userId from token. Backend should fall back to Authorization header.');
+    }
 
 
-    const payload = { subscription: subscription.toJSON() };
+
+    // const payload = { subscription: subscription.toJSON() };
+
+     const payload = {
+      userId, // send when available so backend can link to user
+      subscription: subscription.toJSON()
+    };
 
     console.log('Subscription object:', payload);
 
@@ -125,6 +146,9 @@ export async function subscribeUserToPush(registration, token) {
 
 
 
+
+
+// from here
 // if ('serviceWorker' in navigator && 'PushManager' in window) {
 //   window.addEventListener('load', () => {
 //     navigator.serviceWorker.register('/service-worker.js')
@@ -394,6 +418,7 @@ export async function subscribeUserToPush(registration, token) {
 //   const rawData = window.atob(base64);
 //   return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
 // }
+// To here
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
