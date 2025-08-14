@@ -360,8 +360,6 @@ const API_URL = 'https://todo-list-application.up.railway.app/api/send-test-noti
         onSave={editingTask ? handleUpdateTask : handleCreateTask}
       />
 
-        <button onClick={sendTestNotification}>Send Test Notification</button>
-
       <button
         id="installButton"
         style={{ display: "none" }}

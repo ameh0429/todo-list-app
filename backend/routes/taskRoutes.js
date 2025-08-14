@@ -3,7 +3,7 @@ import {
   createTask,
   getTasks,
   getTask,
-  autoCompleteTasks,
+  // autoCompleteTasks,
   // subscribeTask,
   updateTask,
   deleteTask
@@ -26,12 +26,8 @@ router.route('/tasks')
   .post(validateTask, createTask);
 
   // route for auto-completion
-router.route('/tasks/auto-complete')
-  .post(autoCompleteTasks); // Auto-complete overdue tasks
-
-  // route for subscription
-// router.route('/save-subscription')
-//   .post(subscribeTask); 
+// router.route('/tasks/auto-complete')
+//   .post(autoCompleteTasks); // Auto-complete overdue tasks 
 
 router.route('/tasks/:id')
   .get(validateTaskId, getTask)

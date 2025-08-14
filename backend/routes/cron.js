@@ -1,8 +1,8 @@
-import express from 'express';
-import { autoCompleteTasks } from '../controllers/taskController.js';
+// import express from 'express';
+// import { autoCompleteTasks } from '../controllers/taskController.js';
 
-const router = express.Router();
+// const router = express.Router();
 
-router.get('/run-auto-complete', autoCompleteTasks);
+// router.get('/run-auto-complete', autoCompleteTasks);
 
-export default router;
+// export default router;
