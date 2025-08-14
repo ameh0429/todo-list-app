@@ -20,7 +20,7 @@ export async function sendDueTaskNotifications() {
   const dueTasks = await Task.find({
     dueDate: { $lte: now },
     isCompleted: false
-  }).populate("user");
+  }).populate("userId");
 
   for (let task of dueTasks) {
     const subscriptions = await Subscription.find({ userId: task.user._id });
