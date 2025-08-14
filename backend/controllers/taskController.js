@@ -184,39 +184,6 @@ export const getTask = async (req, res) => {
   }
 };
 
-// @desc    Auto-complete overdue tasks
-// @route   POST /api/tasks/auto-complete
-// @access  Private or Internal
-// export const autoCompleteTasks = async (req, res) => {
-//   try {
-//     const now = new Date();
-//     const buffer = new Date(now.getTime() + 1000);
-
-//     const overdueTasks = await Task.find({
-//       dueDate: { $lte: now },
-//       isCompleted: false
-//     });
-
-//     console.log(`[${new Date().toISOString()}] Auto-complete triggered`);
-//     console.log("Matched overdue tasks:", overdueTasks.map(t => ({
-//       title: t.title,
-//       dueDate: t.dueDate,
-//       isCompleted: t.isCompleted
-//     })));
-
-//     const result = await Task.updateMany(
-//       { dueDate: { $lte: buffer }, isCompleted: false },
-//       { $set: { isCompleted: true } }
-//     );
-
-//     sendSuccess(res, 200, "Overdue tasks marked as completed", {
-//       updatedCount: result.modifiedCount
-//     });
-//   } catch (error) {
-//     console.error("Auto-complete error:", error);
-//     sendError(res, 500, "Server error during auto-completion");
-//   }
-// };
 // @desc    Update task
 // @route   PUT /api/tasks/:id
 // @access  Private
