@@ -15,11 +15,6 @@ import "./cronJobs/autoCompleteTasksCron.js";
 import authRoutes from "./routes/authRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 
-// Import cron routes
-// import cronRoutes from "./routes/cron.js";
-
-// import Task from "./models/Task.js";
-
 // Import services
 import { sendUpcomingTaskReminders } from "./services/emailService.js";
 
@@ -68,7 +63,6 @@ app.use(bodyParser.json());
 // Routes
 app.use("/api", authRoutes);
 app.use("/api", taskRoutes);
-// app.use("/cron", cronRoutes);
 app.use('/api', subscriptionRoutes);
 
 // Save a task with due time
