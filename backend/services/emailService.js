@@ -37,7 +37,7 @@ export const sendTaskCreationEmail = async (user, task) => {
           </div>
           
           <p>Good luck with your task!</p>
-          <p>Best regards,<br>Todo App Team</p>
+          <p>Best regards,<br>DTT App Team</p>
         </div>
       `
     };
@@ -112,7 +112,7 @@ export const sendUpcomingTaskReminders = async () => {
             </ul>
             
             <p>Don't forget to complete ${tasks.length > 1 ? 'these tasks' : 'this task'} on time!</p>
-            <p>Best regards,<br>Todo App Team</p>
+            <p>Best regards,<br>DTT App Team</p>
           </div>
         `
       };
