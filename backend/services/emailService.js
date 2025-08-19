@@ -105,7 +105,7 @@ export const sendUpcomingTaskReminders = async () => {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color:#ff9800;">Upcoming Task Reminder</h2>
             <p>Hi ${user.name},</p>
-            <p>You have <strong>${tasks.length}</strong> task${tasks.length > 1 ? 's' : ''} due in the next 30 minutes:</p>
+            <p>You have <strong>${tasks.length}</strong> task${tasks.length > 1 ? 's' : ''} due in the next minutes:</p>
             
             <ul style="list-style: none; padding: 0;">
               ${tasksList}
